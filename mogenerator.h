@@ -20,6 +20,15 @@
 - (NSArray*)entitiesWithACustomSubclassVerbose:(BOOL)verbose_;
 @end
 
+@interface NSRelationshipDescription (inverseRelationshipIsToMany)
+- (BOOL)inverseRelationshipIsToMany;
+@end
+
+@interface NSRelationshipDescription (appEngineInternalClassName)
+- (BOOL)isAppEngineInternalClass;
+- (NSString *)appEngineInternalClassName;
+@end
+
 @interface NSEntityDescription (customBaseClass)
 - (BOOL)hasCustomSuperentity;
 - (NSString*)customSuperentity;
@@ -42,6 +51,10 @@
 @end
 @interface NSObject (JustHereToSuppressIsOrderedNotImplementedCompilerWarning)
 - (BOOL)isOrdered;
+
+@interface NSAttributeDescription (appEngineAttributeTranslation)
+- (BOOL)isIncludedInGAE; //useful for if we don't want to put a certain attribute into the python file
+- (NSString *)appEngineAttributeType;
 @end
 
 @interface NSString (camelCaseString)
@@ -64,8 +77,8 @@
 	BOOL					_help;
 	BOOL					_version;
 	BOOL					_listSourceFiles;
-    BOOL					_orphaned;
-    NSMutableDictionary     *templateVar;
+	BOOL					_orphaned;
+	NSMutableDictionary     *templateVar;
 }
 
 - (NSString*)appSupportFileNamed:(NSString*)fileName_;

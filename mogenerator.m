@@ -7,10 +7,13 @@
 
 #import "mogenerator.h"
 #import "RegexKitLite.h"
-
 static NSString *kTemplateVar = @"TemplateVar";
-NSString	*gCustomBaseClass;
-NSString	*gCustomBaseClassForced;
+static NSString kGAEClassPrependage = @"GAE_";
+static NSString kGAEOnlyAttributeAppendage = @"gae_";
+//static NSString kGAEOnlyAttributeAppendage = @"_NoGAE";
+
+NSString *gCustomBaseClass;
+NSString *gCustomBaseClassForced;
 
 @interface NSEntityDescription (fetchedPropertiesAdditions)
 - (NSDictionary *)fetchedPropertiesByName;
@@ -54,6 +57,43 @@ NSString	*gCustomBaseClassForced;
 	return [result sortedArrayUsingDescriptors:[NSArray arrayWithObject:[[[NSSortDescriptor alloc] initWithKey:@"managedObjectClassName"
 																									 ascending:YES] autorelease]]];
 }
+@end
+
+@implementation NSRelationshipDescription (inverseRelationshipIsToMany)
+
+- (BOOL)inverseRelationshipIsToMany
+{
+	NSRelationshipDescription *inverse = [self inverseRelationship];
+	if (inverse) {
+		return [inverse isToMany];
+	}
+	return NO;
+}
+
+@end
+
+@implementation NSEntityDescription (appEngineInternalClassName)
+
+-(BOOL)isAppEngineInternalClass
+{	
+	NSString *myName = [self managedObjectClassName];
+	BOOL isGAEClass = [myName hasPrefix:kGAEClassPrependage];
+	return isGAEClass;
+}
+
+-(NSString *)appEngineInternalClassName
+{
+	NSString *className = [self managedObjectClassName];	
+	if ([self isAppEngineInternalClass]) 
+	{
+		NSUInteger prependageLen = [kGAEClassPrependage length];
+		NSRange nameRange = NSMakeRange(prependageLen, [className length] - prependageLen);
+		className = [className substringWithRange:nameRange];
+		className = [className stringByReplacingOccurrencesOfString:@"_" withString:@"."];
+	}
+	return className;
+}
+
 @end
 
 
@@ -284,7 +324,56 @@ NSString	*gCustomBaseClassForced;
     }
 }
 
+@implementation NSAttributeDescription (appEngineAttributeTranslation)
+
+//returns true if gae_ is prepended to the attribute
+- (BOOL)isIncludedInGAE
+{
+	NSString *name = [self name];
+	BOOL isIncluded = [name hasPrefix:kGAEOnlyAttributeAppendage];
+	return isIncluded;
+}
+
+- (NSString *)appEngineAttributeType {
+	switch ([self attributeType]) {
+		case NSInteger16AttributeType:
+			return @"IntegerProperty";
+			break;
+		case NSInteger32AttributeType:
+			return @"IntegerProperty";
+			break;
+		case NSInteger64AttributeType:
+			return @"IntegerProperty";
+			break;
+		case NSDoubleAttributeType:
+			return @"FloatProperty";
+			break;
+		case NSFloatAttributeType:
+			return @"FloatProperty";
+			break;
+		case NSBooleanAttributeType:
+			return @"BooleanProperty";
+			break;
+		case NSDecimalAttributeType:
+			return @"FloatProperty";
+			break;
+		case NSStringAttributeType:
+			return @"StringProperty";
+			break;
+		case NSDateAttributeType:
+			return @"DateTimeProperty";
+			break;
+		case NSBinaryDataAttributeType:
+			return @"NOT_SUPPORTED";
+			//return @"BlobProperty";
+			break;
+		default:
+			return @"NOT_SUPPORTED";
+	}
+}
+
 @end
+
 
 @implementation NSString (camelCaseString)
 - (NSString*)camelCaseString {
@@ -365,12 +454,12 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
     {
     // Long					Short   Argument options
     {@"model",				'm',    DDGetoptRequiredArgument},
-    {@"base-class",			0,     DDGetoptRequiredArgument},
-	{@"base-class-force",	0,     DDGetoptRequiredArgument},
+    {@"base-class",			0,      DDGetoptRequiredArgument},
     // For compatibility:
     {@"baseClass",			0,      DDGetoptRequiredArgument},
+    {@"base-class-force",	0,     DDGetoptRequiredArgument},
     {@"includem",			0,      DDGetoptRequiredArgument},
-	{@"includeh",			0,      DDGetoptRequiredArgument},
+    {@"includeh",			0,      DDGetoptRequiredArgument},
     {@"template-path",		0,      DDGetoptRequiredArgument},
     // For compatibility:
     {@"templatePath",		0,      DDGetoptRequiredArgument},
@@ -383,7 +472,7 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 
     {@"help",				'h',    DDGetoptNoArgument},
     {@"version",			0,      DDGetoptNoArgument},
-	{@"template-var",		0,      DDGetoptKeyValueArgument},
+    {@"template-var",		0,      DDGetoptKeyValueArgument},
     {nil,					0,      0},
     };
     [optionsParser addOptionsFromTable: optionTable];
@@ -395,12 +484,12 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
     printf("\n"
            "  -m, --model MODEL             Path to model\n"
            "      --base-class CLASS        Custom base class\n"
-		   "      --base-class-force CLASS  Same as --base-class except will force all entities to have the specified base class. Even if a super entity exists\n"
+           "      --base-class-force CLASS  Same as --base-class except will force all entities to have the specified base class. Even if a super entity exists\n"
            "      --includem FILE           Generate aggregate include file for .m files for both human and machine generated source files\n"
            "      --includeh FILE           Generate aggregate include file for .h files for human generated source files only\n"
            "      --template-path PATH      Path to templates (absolute or relative to model path)\n"
            "      --template-group NAME     Name of template group\n"
-		   "      --template-var KEY=VALUE  A key-value pair to pass to the template file. There can be many of these.\n"
+           "      --template-var KEY=VALUE  A key-value pair to pass to the template file. There can be many of these.\n"
            "  -O, --output-dir DIR          Output directory\n"
            "  -M, --machine-dir DIR         Output directory for machine files\n"
            "  -H, --human-dir DIR           Output directory for human files\n"
@@ -424,14 +513,15 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 		
 		NSPipe *pipe = [NSPipe pipe];
 		[task setStandardOutput:pipe];
-		//	Ensures that the current tasks output doesn't get hijacked
-		[task setStandardInput:[NSPipe pipe]];
+		 //	Ensures that the current tasks output doesn't get hijacked
+		 [task setStandardInput:[NSPipe pipe]];
 		
 		NSFileHandle *file = [pipe fileHandleForReading];
 		
 		[task launch];
 		
 		NSData *data = [file readDataToEndOfFile];
+		
 		result = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
 		result = [result substringToIndex:[result length]-1]; // trim newline
 	} @catch(NSException *ex) {
@@ -526,6 +616,7 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 	}
 }
 
+
 - (int) application: (DDCliApplication *) app
    runWithArguments: (NSArray *) arguments;
 {
@@ -555,7 +646,7 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 	[self validateOutputPath:outputDir forType:@"Output"];
 	[self validateOutputPath:machineDir forType:@"Machine Output"];
 	[self validateOutputPath:humanDir forType:@"Human Output"];
-
+	
     if (outputDir == nil)
         outputDir = @"";
     if (machineDir == nil)
@@ -574,7 +665,7 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 				srcDir = [fm currentDirectoryPath];
 			}
 			nsenumerate([fm subpathsAtPath:srcDir], NSString, srcFileName) {
-				#define MANAGED_OBJECT_SOURCE_FILE_REGEX	@"_?([a-zA-Z0-9_]+MO).(h|m|mm)" // Sadly /^(*MO).(h|m|mm)$/ doesn't work.
+				#define MANAGED_OBJECT_SOURCE_FILE_REGEX	@"_?([a-zA-Z0-9_]+MO).(h|m|mm|py)" // Sadly /^(*MO).(h|m|mm)$/ doesn't work.
 				if ([srcFileName isMatchedByRegex:MANAGED_OBJECT_SOURCE_FILE_REGEX]) {
 					NSString *entityName = [[srcFileName captureComponentsMatchedByRegex:MANAGED_OBJECT_SOURCE_FILE_REGEX] objectAtIndex:1];
 					if (![entityFilesByName objectForKey:entityName]) {
@@ -621,32 +712,46 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 	int machineFilesGenerated = 0;        
 	int humanFilesGenerated = 0;
 	
+	int machineFilesGenerated = 0;        
+	int humanFilesGenerated = 0;
+	
 	if (model) {
 		MiscMergeEngine *machineH = engineWithTemplatePath([self appSupportFileNamed:@"machine.h.motemplate"]);
 		assert(machineH);
 		MiscMergeEngine *machineM = engineWithTemplatePath([self appSupportFileNamed:@"machine.m.motemplate"]);
 		assert(machineM);
+		MiscMergeEngine *machinePY = engineWithTemplatePath([self appSupportFileNamed:@"machine.py.motemplate"]);
+		assert(machinePY);
 		MiscMergeEngine *humanH = engineWithTemplatePath([self appSupportFileNamed:@"human.h.motemplate"]);
 		assert(humanH);
 		MiscMergeEngine *humanM = engineWithTemplatePath([self appSupportFileNamed:@"human.m.motemplate"]);
 		assert(humanM);
+		MiscMergeEngine *humanPY = engineWithTemplatePath([self appSupportFileNamed:@"human.py.motemplate"]);
+		assert(humanPY);
 		
 		// Add the template var dictionary to each of the merge engines
 		[machineH setEngineValue:templateVar forKey:kTemplateVar];
 		[machineM setEngineValue:templateVar forKey:kTemplateVar];
+		[machinePY setEngineValue:templateVar forKey:kTemplateVar];
 		[humanH setEngineValue:templateVar forKey:kTemplateVar];
 		[humanM setEngineValue:templateVar forKey:kTemplateVar];
+		[humanPY setEngineValue:templateVar forKey:kTemplateVar];
 		
 		NSMutableArray	*humanMFiles = [NSMutableArray array],
 						*humanHFiles = [NSMutableArray array],
+					    *humanPYFiles = [NSMutableArray array],
 						*machineMFiles = [NSMutableArray array],
-						*machineHFiles = [NSMutableArray array];
+						*machineHFiles = [NSMutableArray array],
+						*machinePYFiles = [NSMutableArray array];
 		
 		nsenumerate ([model entitiesWithACustomSubclassVerbose:YES], NSEntityDescription, entity) {
 			NSString *generatedMachineH = [machineH executeWithObject:entity sender:nil];
 			NSString *generatedMachineM = [machineM executeWithObject:entity sender:nil];
+			NSString *generatedMachinePY = [machinePY executeWithObject:entity sender:nil];
+			
 			NSString *generatedHumanH = [humanH executeWithObject:entity sender:nil];
 			NSString *generatedHumanM = [humanM executeWithObject:entity sender:nil];
+			NSString *generatedHumanPY = [humanPY executeWithObject:entity sender:nil];
 			
 			NSString *entityClassName = [entity managedObjectClassName];
 			BOOL machineDirtied = NO;
@@ -676,6 +781,22 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 					[generatedMachineM writeToFile:machineMFileName atomically:NO encoding:NSUTF8StringEncoding error:nil];
 					machineDirtied = YES;
 					machineFilesGenerated++;
+				}
+			}
+			
+			// Machine python files other than those that are part of GAE.
+			if (![entityClassName hasPrefix:kGAEClassPrependage]) {
+				NSString *machinePYFileName = [machineDir stringByAppendingPathComponent:
+											   [NSString stringWithFormat:@"_%@.py", entityClassName]];
+				if (_listSourceFiles) {
+					[machinePYFiles addObject:machinePYFileName];
+				} else {
+					if (![fm regularFileExistsAtPath:machinePYFileName] || ![generatedMachinePY isEqualToString:[NSString stringWithContentsOfFile:machinePYFileName]]) {
+						//	If the file doesn't exist or is different than what we just generated, write it out.
+						[generatedMachinePY writeToFile:machinePYFileName atomically:NO encoding:NSUTF8StringEncoding error:nil];
+						machineDirtied = YES;
+						machineFilesGenerated++;
+					}
 				}
 			}
 			
@@ -715,6 +836,23 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 				}
 			}
 			
+			// Human python files other than those that are part of GAE.
+			if(![entityClassName hasPrefix:kGAEClassPrependage])
+			{
+				NSString *humanPYFileName = [humanDir stringByAppendingPathComponent:
+											 [NSString stringWithFormat:@"%@.py", entityClassName]];
+				if (_listSourceFiles) {
+					[humanPYFiles addObject:humanPYFileName];
+				} else {
+					if ([fm regularFileExistsAtPath:humanPYFileName]) {
+						if (machineDirtied)
+							[fm touchPath:humanPYFileName];
+					} else {
+						[generatedHumanPY writeToFile:humanPYFileName atomically:NO];
+						humanFilesGenerated++;
+					}
+				}
+			}
 			[mfileContent appendFormat:@"#import \"%@\"\n#import \"%@\"\n",
                 [humanMFileName lastPathComponent], [machineMFileName lastPathComponent]];
 			
@@ -722,7 +860,7 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 		}
 		
 		if (_listSourceFiles) {
-			NSArray *filesList = [NSArray arrayWithObjects:humanMFiles, humanHFiles, machineMFiles, machineHFiles, nil];
+			NSArray *filesList = [NSArray arrayWithObjects:humanMFiles, humanHFiles, machineMFiles, machineHFiles, machinePYFiles, humanPYFiles, nil];
 			nsenumerate (filesList, NSArray, files) {
 				nsenumerate (files, NSString, fileName) {
 					ddprintf(@"%@\n", fileName);
@@ -739,13 +877,13 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 		[mfileContent writeToFile:mfilePath atomically:NO encoding:NSUTF8StringEncoding error:nil];
 		mfileGenerated = YES;
 	}
-
+	
 	bool hfileGenerated = NO;
 	if (hfilePath && ![hfileContent isEqualToString:@""]) {
 		[hfileContent writeToFile:hfilePath atomically:NO encoding:NSUTF8StringEncoding error:nil];
 		hfileGenerated = YES;
 	}
-
+	
 	if (!_listSourceFiles) {
 		printf("%d machine files%s %d human files%s generated.\n", machineFilesGenerated,
 			   (mfileGenerated ? "," : " and"), humanFilesGenerated, (mfileGenerated ? " and one include.m file" : ""));
