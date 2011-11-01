@@ -8,8 +8,8 @@
 #import "mogenerator.h"
 #import "RegexKitLite.h"
 static NSString *kTemplateVar = @"TemplateVar";
-static NSString kGAEClassPrependage = @"GAE_";
-static NSString kGAEOnlyAttributeAppendage = @"gae_";
+static NSString *kGAEClassPrependage = @"GAE_";
+static NSString *kGAEOnlyAttributeAppendage = @"gae_";
 //static NSString kGAEOnlyAttributeAppendage = @"_NoGAE";
 
 NSString *gCustomBaseClass;
@@ -324,6 +324,8 @@ NSString *gCustomBaseClassForced;
     }
 }
 
+@end
+
 @implementation NSAttributeDescription (appEngineAttributeTranslation)
 
 //returns true if gae_ is prepended to the attribute
@@ -626,7 +628,7 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
     }
     
     if (_version) {
-        printf("mogenerator 1.23. By Jonathan 'Wolf' Rentzsch + friends.\n");
+        printf("mogenerator 1.23. By Jonathan 'Wolf' Rentzsch + friends.\n  Google App Engine Python additions by Jonathan Saggau.\n");
         return EXIT_SUCCESS;
     }
 
@@ -712,9 +714,6 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 	int machineFilesGenerated = 0;        
 	int humanFilesGenerated = 0;
 	
-	int machineFilesGenerated = 0;        
-	int humanFilesGenerated = 0;
-	
 	if (model) {
 		MiscMergeEngine *machineH = engineWithTemplatePath([self appSupportFileNamed:@"machine.h.motemplate"]);
 		assert(machineH);
@@ -791,7 +790,8 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 				if (_listSourceFiles) {
 					[machinePYFiles addObject:machinePYFileName];
 				} else {
-					if (![fm regularFileExistsAtPath:machinePYFileName] || ![generatedMachinePY isEqualToString:[NSString stringWithContentsOfFile:machinePYFileName]]) {
+					if (![fm regularFileExistsAtPath:machinePYFileName] || 
+					    ![generatedMachinePY isEqualToString:[NSString stringWithContentsOfFile:machinePYFileName encoding:NSUTF8StringEncoding error:nil]]) {
 						//	If the file doesn't exist or is different than what we just generated, write it out.
 						[generatedMachinePY writeToFile:machinePYFileName atomically:NO encoding:NSUTF8StringEncoding error:nil];
 						machineDirtied = YES;
@@ -848,7 +848,7 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 						if (machineDirtied)
 							[fm touchPath:humanPYFileName];
 					} else {
-						[generatedHumanPY writeToFile:humanPYFileName atomically:NO];
+						[generatedHumanPY writeToFile:humanPYFileName atomically:NO encoding:NSUTF8StringEncoding error:nil];
 						humanFilesGenerated++;
 					}
 				}

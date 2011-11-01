@@ -49,8 +49,10 @@
 - (NSString*)immutableCollectionClassName;
 - (BOOL)_jr_isOrdered;
 @end
+
 @interface NSObject (JustHereToSuppressIsOrderedNotImplementedCompilerWarning)
 - (BOOL)isOrdered;
+@end
 
 @interface NSAttributeDescription (appEngineAttributeTranslation)
 - (BOOL)isIncludedInGAE; //useful for if we don't want to put a certain attribute into the python file
