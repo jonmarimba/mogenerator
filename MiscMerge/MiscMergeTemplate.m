@@ -445,8 +445,11 @@
 - (void)parseContentsOfFile:(NSString *)filename
 {
     NSString *string = [self contentsOfFileWithName:filename];
-    [self setFilename:filename];
-    [self parseString:string];
+    if (string) 
+    {
+        [self setFilename:filename];
+        [self parseString:string];
+    }
 }
 
 /*"
