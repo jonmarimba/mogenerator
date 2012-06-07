@@ -3,6 +3,30 @@
 
 #import "_ParentMO.h"
 
+const struct ParentMOAttributes ParentMOAttributes = {
+	.myBinaryData = @"myBinaryData",
+	.myBoolean = @"myBoolean",
+	.myDate = @"myDate",
+	.myDecimal = @"myDecimal",
+	.myDouble = @"myDouble",
+	.myFloat = @"myFloat",
+	.myInt16 = @"myInt16",
+	.myInt16Transient = @"myInt16Transient",
+	.myInt32 = @"myInt32",
+	.myInt64 = @"myInt64",
+	.myString = @"myString",
+	.myTransformableSansClassName = @"myTransformableSansClassName",
+	.myTransformableWithClassName = @"myTransformableWithClassName",
+	.parentName = @"parentName",
+};
+
+const struct ParentMORelationships ParentMORelationships = {
+	.children = @"children",
+};
+
+const struct ParentMOFetchedProperties ParentMOFetchedProperties = {
+};
+
 @implementation ParentMOID
 @end
 
@@ -26,36 +50,43 @@
 	return (ParentMOID*)[super objectID];
 }
 
-+ (NSSet *)keyPathsForValuesAffectingValueForKey:(NSString *)key {
++ (NSSet*)keyPathsForValuesAffectingValueForKey:(NSString*)key {
 	NSSet *keyPaths = [super keyPathsForValuesAffectingValueForKey:key];
 	
 	if ([key isEqualToString:@"myBooleanValue"]) {
 		NSSet *affectingKey = [NSSet setWithObject:@"myBoolean"];
 		keyPaths = [keyPaths setByAddingObjectsFromSet:affectingKey];
+		return keyPaths;
 	}
 	if ([key isEqualToString:@"myDoubleValue"]) {
 		NSSet *affectingKey = [NSSet setWithObject:@"myDouble"];
 		keyPaths = [keyPaths setByAddingObjectsFromSet:affectingKey];
+		return keyPaths;
 	}
 	if ([key isEqualToString:@"myFloatValue"]) {
 		NSSet *affectingKey = [NSSet setWithObject:@"myFloat"];
 		keyPaths = [keyPaths setByAddingObjectsFromSet:affectingKey];
+		return keyPaths;
 	}
 	if ([key isEqualToString:@"myInt16Value"]) {
 		NSSet *affectingKey = [NSSet setWithObject:@"myInt16"];
 		keyPaths = [keyPaths setByAddingObjectsFromSet:affectingKey];
+		return keyPaths;
 	}
 	if ([key isEqualToString:@"myInt16TransientValue"]) {
 		NSSet *affectingKey = [NSSet setWithObject:@"myInt16Transient"];
 		keyPaths = [keyPaths setByAddingObjectsFromSet:affectingKey];
+		return keyPaths;
 	}
 	if ([key isEqualToString:@"myInt32Value"]) {
 		NSSet *affectingKey = [NSSet setWithObject:@"myInt32"];
 		keyPaths = [keyPaths setByAddingObjectsFromSet:affectingKey];
+		return keyPaths;
 	}
 	if ([key isEqualToString:@"myInt64Value"]) {
 		NSSet *affectingKey = [NSSet setWithObject:@"myInt64"];
 		keyPaths = [keyPaths setByAddingObjectsFromSet:affectingKey];
+		return keyPaths;
 	}
 
 	return keyPaths;
@@ -167,21 +198,21 @@
 
 
 
-- (short)myInt16Value {
+- (int16_t)myInt16Value {
 	NSNumber *result = [self myInt16];
 	return [result shortValue];
 }
 
-- (void)setMyInt16Value:(short)value_ {
+- (void)setMyInt16Value:(int16_t)value_ {
 	[self setMyInt16:[NSNumber numberWithShort:value_]];
 }
 
-- (short)primitiveMyInt16Value {
+- (int16_t)primitiveMyInt16Value {
 	NSNumber *result = [self primitiveMyInt16];
 	return [result shortValue];
 }
 
-- (void)setPrimitiveMyInt16Value:(short)value_ {
+- (void)setPrimitiveMyInt16Value:(int16_t)value_ {
 	[self setPrimitiveMyInt16:[NSNumber numberWithShort:value_]];
 }
 
@@ -193,21 +224,21 @@
 
 
 
-- (short)myInt16TransientValue {
+- (int16_t)myInt16TransientValue {
 	NSNumber *result = [self myInt16Transient];
 	return [result shortValue];
 }
 
-- (void)setMyInt16TransientValue:(short)value_ {
+- (void)setMyInt16TransientValue:(int16_t)value_ {
 	[self setMyInt16Transient:[NSNumber numberWithShort:value_]];
 }
 
-- (short)primitiveMyInt16TransientValue {
+- (int16_t)primitiveMyInt16TransientValue {
 	NSNumber *result = [self primitiveMyInt16Transient];
 	return [result shortValue];
 }
 
-- (void)setPrimitiveMyInt16TransientValue:(short)value_ {
+- (void)setPrimitiveMyInt16TransientValue:(int16_t)value_ {
 	[self setPrimitiveMyInt16Transient:[NSNumber numberWithShort:value_]];
 }
 
@@ -219,21 +250,21 @@
 
 
 
-- (int)myInt32Value {
+- (int32_t)myInt32Value {
 	NSNumber *result = [self myInt32];
 	return [result intValue];
 }
 
-- (void)setMyInt32Value:(int)value_ {
+- (void)setMyInt32Value:(int32_t)value_ {
 	[self setMyInt32:[NSNumber numberWithInt:value_]];
 }
 
-- (int)primitiveMyInt32Value {
+- (int32_t)primitiveMyInt32Value {
 	NSNumber *result = [self primitiveMyInt32];
 	return [result intValue];
 }
 
-- (void)setPrimitiveMyInt32Value:(int)value_ {
+- (void)setPrimitiveMyInt32Value:(int32_t)value_ {
 	[self setPrimitiveMyInt32:[NSNumber numberWithInt:value_]];
 }
 
@@ -245,21 +276,21 @@
 
 
 
-- (long long)myInt64Value {
+- (int64_t)myInt64Value {
 	NSNumber *result = [self myInt64];
 	return [result longLongValue];
 }
 
-- (void)setMyInt64Value:(long long)value_ {
+- (void)setMyInt64Value:(int64_t)value_ {
 	[self setMyInt64:[NSNumber numberWithLongLong:value_]];
 }
 
-- (long long)primitiveMyInt64Value {
+- (int64_t)primitiveMyInt64Value {
 	NSNumber *result = [self primitiveMyInt64];
 	return [result longLongValue];
 }
 
-- (void)setPrimitiveMyInt64Value:(long long)value_ {
+- (void)setPrimitiveMyInt64Value:(int64_t)value_ {
 	[self setPrimitiveMyInt64:[NSNumber numberWithLongLong:value_]];
 }
 
@@ -298,13 +329,16 @@
 @dynamic children;
 
 	
-- (NSMutableOrderedSet*)childrenSet {
+- (NSMutableSet*)childrenSet {
 	[self willAccessValueForKey:@"children"];
-	NSMutableOrderedSet *result = (NSMutableOrderedSet*)[self mutableSetValueForKey:@"children"];
+  
+	NSMutableSet *result = (NSMutableSet*)[self mutableSetValueForKey:@"children"];
+  
 	[self didAccessValueForKey:@"children"];
 	return result;
 }
 	
+
 
 
 
