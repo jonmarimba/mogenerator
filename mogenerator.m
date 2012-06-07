@@ -7,7 +7,7 @@
 
 #import "mogenerator.h"
 #import "RegexKitLite.h"
-<<<<<<< HEAD
+
 static NSString * const kTemplateVar = @"TemplateVar";
 static NSString *kGAEClassPrependage = @"GAE_";
 static NSString *kGAEOnlyAttributeAppendage = @"gae_";
@@ -861,13 +861,13 @@ NSString *ApplicationSupportSubdirectoryName = @"mogenerator";
 		assert(machineH);
 		MiscMergeEngine *machineM = engineWithTemplateDesc([self templateDescNamed:@"machine.m.motemplate"]);
 		assert(machineM);
-		MiscMergeEngine *machinePY = engineWithTemplatePath([self templateDescNamed:@"machine.py.motemplate"]);
+		MiscMergeEngine *machinePY = engineWithTemplateDesc([self templateDescNamed:@"machine.py.motemplate"]);
 		assert(machinePY);
-		MiscMergeEngine *humanH = engineWithTemplatePath([self templateDescNamed:@"human.h.motemplate"]);
+		MiscMergeEngine *humanH = engineWithTemplateDesc([self templateDescNamed:@"human.h.motemplate"]);
 		assert(humanH);
 		MiscMergeEngine *humanM = engineWithTemplateDesc([self templateDescNamed:@"human.m.motemplate"]);
 		assert(humanM);
-		MiscMergeEngine *humanPY = engineWithTemplatePath([self templateDescNamed:@"human.py.motemplate"]);
+		MiscMergeEngine *humanPY = engineWithTemplateDesc([self templateDescNamed:@"human.py.motemplate"]);
 		assert(humanPY);
 		
 		// Add the template var dictionary to each of the merge engines
